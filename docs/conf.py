@@ -37,12 +37,16 @@ sys.path.insert(0, os.path.abspath('..'))
 # https://github.com/sphinx-doc/sphinx/issues/6518#issuecomment-589613836
 from typing import ForwardRef
 
+
 def _do_not_evaluate_in_jax(
-    self, globalns, *args, _evaluate=ForwardRef._evaluate,
+    self, globalns, *args, recursive_guard, _evaluate=ForwardRef._evaluate,
 ):
   if globalns.get('__name__', '').startswith('jax'):
     return self
-  return _evaluate(self, globalns, *args)
+  # The following condition could be removed while CI env upgrading to Python 3.12
+  if sys.version_info < (3, 12):
+      return _evaluate(self, globalns, *args)
+  return _evaluate(self, globalns, *args, recursive_guard=recursive_guard)
 
 ForwardRef._evaluate = _do_not_evaluate_in_jax
 
